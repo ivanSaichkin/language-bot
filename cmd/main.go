@@ -13,14 +13,12 @@ import (
 func main() {
 	log.Println("Starting Language Learning Bot...")
 
-	// Загружаем конфигурацию
 	cfg := config.Load()
 
 	if cfg.TelegramToken == "" {
 		log.Fatal("TELEGRAM_BOT_TOKEN is required")
 	}
 
-	// Инициализируем бота
 	telegramBot, err := tgbotapi.NewBotAPI(cfg.TelegramToken)
 	if err != nil {
 		log.Fatalf("Failed to create bot: %v", err)
@@ -28,10 +26,8 @@ func main() {
 
 	log.Printf("Authorized on account %s", telegramBot.Self.UserName)
 
-	// Инициализируем обработчик
 	handler := bot.NewSimpleHandler(telegramBot)
 
-	// Настраиваем получение обновлений
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -39,10 +35,7 @@ func main() {
 
 	log.Println("Bot is running and listening for messages...")
 
-	// Основной цикл обработки сообщений
 	for update := range updates {
-		// Обрабатываем каждое обновление в отдельной горутине
-		// для простоты и параллелизма
 		go handler.HandleUpdate(update)
 	}
 }

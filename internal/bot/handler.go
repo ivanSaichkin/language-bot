@@ -2,6 +2,8 @@ package bot
 
 import (
 	"fmt"
+	"ivanSaichkin/language-bot/internal/constants"
+	"ivanSaichkin/language-bot/internal/domain"
 	"log"
 	"strings"
 
@@ -79,7 +81,6 @@ func (h *SimpleHandler) handleCommand(update tgbotapi.Update) {
 	case "words":
 		resp = "📖 Ваши слова:\n(функциональность будет добавлена)"
 		// TODO: реализовать в след. частях
-
 	default:
 		resp = "Неизвестная команда. Используйте /help для списка команд."
 	}
@@ -101,36 +102,23 @@ func (h *SimpleHandler) handleMessage(update tgbotapi.Update) {
 }
 
 func (h *SimpleHandler) handleWordAddition(chatID int64, text string) {
-	// Временная реализация - просто эмулируем добавление
-	// В след. частях заменим на работу с БД
-
-	var original, translation string
-	if separator := findSeparator(text); separator != -1 {
-		original = text[:separator]
-		translation = text[separator+1:]
-	}
-
-	// Очищаем пробелы
-	original = cleanText(original)
-	translation = cleanText(translation)
-
-	if original == "" || translation == "" {
+	original, translation, ok := parseWordInput(text)
+	if !ok {
 		h.sendMessage(chatID, "Неверный формат. Используйте: слово - перевод")
 		return
 	}
 
-	response := fmt.Sprintf("✅ Слово добавлено: *%s* - %s\n\n(временная реализация - данные не сохраняются)",
-		original, translation)
+	word := domain.NewWord(chatID, original, translation, constants.LanguageEnglish)
+
+	response := fmt.Sprintf("✅ Слово добавлено: *%s* - %s\n\nЯзык: английский 🇬🇧",
+		word.Original, word.Translation)
 
 	h.sendMessage(chatID, response)
 }
 
 func (h *SimpleHandler) isWordFormat(text string) bool {
-	// Простая проверка на наличие тире
-	// В реальной реализации будет сложнее
 	for i, char := range text {
 		if char == '-' || char == '—' {
-			// Проверяем, что есть текст до и после тире
 			return i > 0 && i < len(text)-1
 		}
 	}
@@ -156,6 +144,22 @@ func findSeparator(text string) int {
 }
 
 func cleanText(text string) string {
-	// Убираем лишние пробелы
 	return strings.TrimSpace(text)
+}
+
+func parseWordInput(text string) (original, translation string, ok bool) {
+	separators := []string{" - ", " — ", "-", "—"}
+
+	for _, sep := range separators {
+		if idx := strings.Index(text, sep); idx != -1 {
+			original = strings.TrimSpace(text[:idx])
+			translation = strings.TrimSpace(text[idx+len(sep):])
+
+			if original != "" && translation != "" {
+				return original, translation, true
+			}
+		}
+	}
+
+	return "", "", false
 }
