@@ -1,4 +1,3 @@
-// cmd/bot/main.go
 package main
 
 import (

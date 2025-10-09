@@ -11,6 +11,16 @@ type Config struct {
 	TelegramToken string
 	BotWorkers    int
 	BotQueueSize  int
+	Database      DatabaseConfig
+}
+
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
 }
 
 func Load() *Config {
@@ -20,6 +30,14 @@ func Load() *Config {
 		TelegramToken: getEnv("TELEGRAM_BOT_TOKEN", ""),
 		BotWorkers:    getEnvAsInt("BOT_WORKERS", 5),
 		BotQueueSize:  getEnvAsInt("BOT_QUEUE_SIZE", 1000),
+		Database: DatabaseConfig{
+			Host:     getEnv("DB_HOST", "localhost"),
+			Port:     getEnv("DB_PORT", "5432"),
+			User:     getEnv("DB_USER", "postgres"),
+			Password: getEnv("DB_PASSWORD", "password"),
+			DBName:   getEnv("DB_NAME", "language_bot"),
+			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+		},
 	}
 }
 
