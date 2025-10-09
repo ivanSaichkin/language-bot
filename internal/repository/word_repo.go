@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"ivanSaichkin/language-bot/internal/domain"
 	"time"
+
+	"ivanSaichkin/language-bot/internal/domain"
 )
 
 type wordRepository struct {
@@ -20,11 +21,10 @@ func (r *wordRepository) Create(ctx context.Context, word *domain.Word) error {
 	query := `
         INSERT INTO words (user_id, original, translation, language, part_of_speech, example,
                           difficulty, next_review, review_count, correct_answers, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        RETURNING id
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
-	err := r.db.QueryRowContext(ctx, query,
+	result, err := r.db.ExecContext(ctx, query,
 		word.UserID,
 		word.Original,
 		word.Translation,
@@ -37,11 +37,19 @@ func (r *wordRepository) Create(ctx context.Context, word *domain.Word) error {
 		word.CorrectAnswers,
 		word.CreatedAt,
 		word.UpdatedAt,
-	).Scan(&word.ID)
+	)
 
 	if err != nil {
 		return fmt.Errorf("failed to create word: %w", err)
 	}
+
+	// Получаем ID вставленной записи
+	id, err := result.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("failed to get last insert id: %w", err)
+	}
+
+	word.ID = int(id)
 
 	// Обновляем статистику пользователя
 	return r.updateUserWordStats(ctx, word.UserID)
@@ -51,7 +59,7 @@ func (r *wordRepository) GetByID(ctx context.Context, wordID int) (*domain.Word,
 	query := `
         SELECT id, user_id, original, translation, language, part_of_speech, example,
                difficulty, next_review, review_count, correct_answers, created_at, updated_at
-        FROM words WHERE id = $1
+        FROM words WHERE id = ?
     `
 
 	var word domain.Word
@@ -85,7 +93,7 @@ func (r *wordRepository) GetByUserID(ctx context.Context, userID int64) ([]*doma
 	query := `
         SELECT id, user_id, original, translation, language, part_of_speech, example,
                difficulty, next_review, review_count, correct_answers, created_at, updated_at
-        FROM words WHERE user_id = $1
+        FROM words WHERE user_id = ?
         ORDER BY next_review ASC
     `
 
@@ -127,7 +135,7 @@ func (r *wordRepository) GetDueWords(ctx context.Context, userID int64) ([]*doma
         SELECT id, user_id, original, translation, language, part_of_speech, example,
                difficulty, next_review, review_count, correct_answers, created_at, updated_at
         FROM words
-        WHERE user_id = $1 AND next_review <= $2
+        WHERE user_id = ? AND next_review <= ?
         ORDER BY next_review ASC
         LIMIT 50
     `
@@ -166,13 +174,17 @@ func (r *wordRepository) GetDueWords(ctx context.Context, userID int64) ([]*doma
 }
 
 func (r *wordRepository) GetWordsForReview(ctx context.Context, userID int64, limit int) ([]*domain.Word, error) {
+	if limit <= 0 || limit > 50 {
+		limit = 10
+	}
+
 	query := `
         SELECT id, user_id, original, translation, language, part_of_speech, example,
                difficulty, next_review, review_count, correct_answers, created_at, updated_at
         FROM words
-        WHERE user_id = $1 AND next_review <= $2
+        WHERE user_id = ? AND next_review <= ?
         ORDER BY next_review ASC
-        LIMIT $3
+        LIMIT ?
     `
 
 	rows, err := r.db.QueryContext(ctx, query, userID, time.Now(), limit)
@@ -211,9 +223,9 @@ func (r *wordRepository) GetWordsForReview(ctx context.Context, userID int64, li
 func (r *wordRepository) Update(ctx context.Context, word *domain.Word) error {
 	query := `
         UPDATE words
-        SET original = $1, translation = $2, language = $3, part_of_speech = $4, example = $5,
-            difficulty = $6, next_review = $7, review_count = $8, correct_answers = $9, updated_at = $10
-        WHERE id = $11
+        SET original = ?, translation = ?, language = ?, part_of_speech = ?, example = ?,
+            difficulty = ?, next_review = ?, review_count = ?, correct_answers = ?, updated_at = ?
+        WHERE id = ?
     `
 
 	result, err := r.db.ExecContext(ctx, query,
@@ -255,7 +267,7 @@ func (r *wordRepository) Delete(ctx context.Context, wordID int) error {
 		return fmt.Errorf("word not found")
 	}
 
-	query := `DELETE FROM words WHERE id = $1`
+	query := `DELETE FROM words WHERE id = ?`
 	result, err := r.db.ExecContext(ctx, query, wordID)
 	if err != nil {
 		return fmt.Errorf("failed to delete word: %w", err)
@@ -270,16 +282,15 @@ func (r *wordRepository) Delete(ctx context.Context, wordID int) error {
 		return fmt.Errorf("word not found")
 	}
 
-	// Обновляем статистику пользователя
 	return r.updateUserWordStats(ctx, word.UserID)
 }
 
 func (r *wordRepository) GetRandomTranslations(ctx context.Context, userID int64, exclude string, limit int) ([]string, error) {
 	query := `
         SELECT translation FROM words
-        WHERE user_id = $1 AND translation != $2
+        WHERE user_id = ? AND translation != ?
         ORDER BY RANDOM()
-        LIMIT $3
+        LIMIT ?
     `
 
 	rows, err := r.db.QueryContext(ctx, query, userID, exclude, limit)
@@ -303,12 +314,12 @@ func (r *wordRepository) GetRandomTranslations(ctx context.Context, userID int64
 func (r *wordRepository) updateUserWordStats(ctx context.Context, userID int64) error {
 	query := `
         UPDATE user_stats
-        SET total_words = (SELECT COUNT(*) FROM words WHERE user_id = $1),
-            learned_words = (SELECT COUNT(*) FROM words WHERE user_id = $1 AND correct_answers >= 5),
-            updated_at = $2
-        WHERE user_id = $1
+        SET total_words = (SELECT COUNT(*) FROM words WHERE user_id = ?),
+            learned_words = (SELECT COUNT(*) FROM words WHERE user_id = ? AND correct_answers >= 5),
+            updated_at = ?
+        WHERE user_id = ?
     `
 
-	_, err := r.db.ExecContext(ctx, query, userID, time.Now())
+	_, err := r.db.ExecContext(ctx, query, userID, userID, time.Now(), userID)
 	return err
 }

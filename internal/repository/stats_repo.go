@@ -4,8 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"ivanSaichkin/language-bot/internal/domain"
 	"time"
+
+	"ivanSaichkin/language-bot/internal/domain"
 )
 
 type statsRepository struct {
@@ -20,7 +21,7 @@ func (r *statsRepository) Create(ctx context.Context, stats *domain.UserStats) e
 	query := `
         INSERT INTO user_stats (user_id, total_words, learned_words, total_reviews, total_correct,
                                streak_days, max_streak_days, total_time, last_review_date, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -44,7 +45,7 @@ func (r *statsRepository) GetByUserID(ctx context.Context, userID int64) (*domai
 	query := `
         SELECT user_id, total_words, learned_words, total_reviews, total_correct,
                streak_days, max_streak_days, total_time, last_review_date, created_at, updated_at
-        FROM user_stats WHERE user_id = $1
+        FROM user_stats WHERE user_id = ?
     `
 
 	var stats domain.UserStats
@@ -75,9 +76,9 @@ func (r *statsRepository) GetByUserID(ctx context.Context, userID int64) (*domai
 func (r *statsRepository) Update(ctx context.Context, stats *domain.UserStats) error {
 	query := `
         UPDATE user_stats
-        SET total_words = $1, learned_words = $2, total_reviews = $3, total_correct = $4,
-            streak_days = $5, max_streak_days = $6, total_time = $7, last_review_date = $8, updated_at = $9
-        WHERE user_id = $10
+        SET total_words = ?, learned_words = ?, total_reviews = ?, total_correct = ?,
+            streak_days = ?, max_streak_days = ?, total_time = ?, last_review_date = ?, updated_at = ?
+        WHERE user_id = ?
     `
 
 	result, err := r.db.ExecContext(ctx, query,

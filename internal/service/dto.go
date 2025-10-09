@@ -6,6 +6,7 @@ type ReviewAnswerResult struct {
 	IsCorrect       bool
 	CorrectAnswer   string
 	NextInterval    time.Duration
+	OriginalWord    string
 	SessionProgress *SessionProgress
 }
 
@@ -25,7 +26,6 @@ type WordProgress struct {
 	TodayReviewed int
 }
 
-// UserStatsRanking рейтинг пользователя
 type UserStatsRanking struct {
 	UserID       int64
 	Username     string
@@ -36,7 +36,6 @@ type UserStatsRanking struct {
 	Rank         int
 }
 
-// StreakInfo информация о серии
 type StreakInfo struct {
 	CurrentStreak    int
 	MaxStreak        int
@@ -44,7 +43,6 @@ type StreakInfo struct {
 	IsTodayCompleted bool
 }
 
-// DailyProgress дневной прогресс
 type DailyProgress struct {
 	DailyGoal      int
 	TodayReviewed  int

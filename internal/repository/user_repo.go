@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
 	"ivanSaichkin/language-bot/internal/constants"
 	"ivanSaichkin/language-bot/internal/domain"
-	"time"
 )
 
 type userRepository struct {
@@ -20,7 +21,7 @@ func NewUserRepository(db *sql.DB) UserRepository {
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 	query := `
         INSERT INTO users (id, username, first_name, last_name, language_code, state, daily_goal, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -47,7 +48,7 @@ func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
 func (r *userRepository) GetByID(ctx context.Context, userID int64) (*domain.User, error) {
 	query := `
         SELECT id, username, first_name, last_name, language_code, state, daily_goal, created_at, updated_at
-        FROM users WHERE id = $1
+        FROM users WHERE id = ?
     `
 
 	var user domain.User
@@ -79,9 +80,9 @@ func (r *userRepository) GetByID(ctx context.Context, userID int64) (*domain.Use
 func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 	query := `
         UPDATE users
-        SET username = $1, first_name = $2, last_name = $3, language_code = $4,
-            state = $5, daily_goal = $6, updated_at = $7
-        WHERE id = $8
+        SET username = ?, first_name = ?, last_name = ?, language_code = ?,
+            state = ?, daily_goal = ?, updated_at = ?
+        WHERE id = ?
     `
 
 	result, err := r.db.ExecContext(ctx, query,
@@ -112,7 +113,7 @@ func (r *userRepository) Update(ctx context.Context, user *domain.User) error {
 }
 
 func (r *userRepository) UpdateState(ctx context.Context, userID int64, state string) error {
-	query := `UPDATE users SET state = $1, updated_at = $2 WHERE id = $3`
+	query := `UPDATE users SET state = ?, updated_at = ? WHERE id = ?`
 
 	result, err := r.db.ExecContext(ctx, query, state, time.Now(), userID)
 	if err != nil {
@@ -173,7 +174,7 @@ func (r *userRepository) createUserStats(ctx context.Context, stats *domain.User
 	query := `
         INSERT INTO user_stats (user_id, total_words, learned_words, total_reviews, total_correct,
                                streak_days, max_streak_days, total_time, last_review_date, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
 
 	_, err := r.db.ExecContext(ctx, query,

@@ -51,7 +51,10 @@ func (s *reviewService) ProcessAnswer(ctx context.Context, session *domain.Revie
 		return nil, fmt.Errorf("no current word in session")
 	}
 
-	isCorrect := strings.EqualFold(strings.TrimSpace(answer), currentWord.Translation)
+	originalWord := currentWord.Original
+	correctTranslation := currentWord.Translation
+
+	isCorrect := strings.EqualFold(strings.TrimSpace(answer), correctTranslation)
 
 	result, err := s.repetition.CalculateNextReview(currentWord, isCorrect)
 	if err != nil {
@@ -82,13 +85,14 @@ func (s *reviewService) ProcessAnswer(ctx context.Context, session *domain.Revie
 
 	reviewResult := &ReviewAnswerResult{
 		IsCorrect:       isCorrect,
-		CorrectAnswer:   currentWord.Translation,
+		CorrectAnswer:   correctTranslation,
+		OriginalWord:    originalWord,
 		NextInterval:    result.NextInterval,
 		SessionProgress: progress,
 	}
 
-	log.Printf("📝 User %d answered: %s -> %s (correct: %v, quality: %d)",
-		session.UserID, currentWord.Original, answer, isCorrect, result.Quality)
+	log.Printf("📝 User %d answered: %s -> '%s' (correct: '%s', isCorrect: %v)",
+		session.UserID, originalWord, answer, correctTranslation, isCorrect)
 
 	return reviewResult, nil
 }

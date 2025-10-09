@@ -131,7 +131,7 @@ func (s *statsService) GetDailyProgress(ctx context.Context, userID int64) (*Dai
 		return nil, fmt.Errorf("user not found: %d", userID)
 	}
 
-	todayReviewed := 0 // Временная заглушка
+	todayReviewed := 0
 
 	remaining := user.DailyGoal - todayReviewed
 	if remaining < 0 {

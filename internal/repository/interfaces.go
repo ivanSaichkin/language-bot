@@ -32,3 +32,14 @@ type StatsRepository interface {
 	AddReview(ctx context.Context, userID int64, isCorrect bool, duration time.Duration) error
 	UpdateWordCount(ctx context.Context, userID int64, total, learned int) error
 }
+
+type SessionRepository interface {
+	Create(ctx context.Context, session *domain.ReviewSession) error
+	GetByID(ctx context.Context, sessionID string) (*domain.ReviewSession, error)
+	GetByUserID(ctx context.Context, userID int64) ([]*domain.ReviewSession, error)
+	Update(ctx context.Context, session *domain.ReviewSession) error
+	Delete(ctx context.Context, sessionID string) error
+	DeleteByUserID(ctx context.Context, userID int64) error
+	CleanupOldSessions(ctx context.Context, olderThan time.Duration) (int, error)
+	GetActiveSessions(ctx context.Context) ([]*domain.ReviewSession, error)
+}

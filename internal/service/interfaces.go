@@ -47,3 +47,12 @@ type SpacedRepetitionService interface {
 	GetWordsForReview(words []*domain.Word) []*domain.Word
 	CalculateEaseFactor(word *domain.Word, quality int) float64
 }
+
+type SessionService interface {
+	CleanupOldSessions(ctx context.Context, olderThan time.Duration) (int, error)
+	GetActiveSessionsCount(ctx context.Context) int
+	DeleteSession(ctx context.Context, sessionID string) error
+	LoadUserSessions(ctx context.Context, userID int64) ([]*domain.ReviewSession, error)
+	LoadSession(ctx context.Context, sessionID string) (*domain.ReviewSession, error)
+	SaveSession(ctx context.Context, session *domain.ReviewSession) error
+}
