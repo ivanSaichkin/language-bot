@@ -17,6 +17,14 @@ type ReviewSession struct {
 	IsCompleted    bool      `json:"is_completed"`
 }
 
+type ReviewResult struct {
+	WordID        int           `json:"word_id"`
+	IsCorrect     bool          `json:"is_correct"`
+	NextInterval  time.Duration `json:"next_interval"`
+	NewDifficulty float64       `json:"new_difficulty"`
+	Quality       int           `json:"quality"` // Качество ответа (0-5)
+}
+
 func NewReviewSession(userID int64, words []*Word) *ReviewSession {
 	if len(words) > 20 {
 		words = words[:20]

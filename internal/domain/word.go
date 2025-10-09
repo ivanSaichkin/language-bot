@@ -60,7 +60,6 @@ func (w *Word) MarkReviewed(isCorrect bool, nextReview time.Time, newDifficulty 
 	} else {
 		w.CorrectAnswers = 0
 	}
-
 	w.Difficulty = newDifficulty
 	w.NextReview = nextReview
 	w.UpdatedAt = time.Now()
@@ -76,4 +75,16 @@ func (w *Word) GetProgress() float64 {
 	}
 
 	return float64(w.CorrectAnswers) / 5.0 * 100.0
+}
+
+func (w *Word) MarkReviewedWithResult(result *ReviewResult, nextReview time.Time) {
+	w.ReviewCount++
+	if result.IsCorrect {
+		w.CorrectAnswers++
+	} else {
+		w.CorrectAnswers = 0
+	}
+	w.Difficulty = result.NewDifficulty
+	w.NextReview = nextReview
+	w.UpdatedAt = time.Now()
 }

@@ -243,7 +243,6 @@ func (r *wordRepository) Update(ctx context.Context, word *domain.Word) error {
 		return fmt.Errorf("word not found")
 	}
 
-	// Обновляем статистику пользователя
 	return r.updateUserWordStats(ctx, word.UserID)
 }
 
